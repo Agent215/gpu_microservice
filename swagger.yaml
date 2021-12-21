@@ -1,7 +1,7 @@
 ---
 openapi: 3.0.2
 info:
-  title: FastAPI
+  title: gpu_service
   version: 0.1.0
 paths:
   "/scrape":
@@ -10,7 +10,7 @@ paths:
       operationId: scrape_cards_scrape_get
       responses:
         '200':
-          description: Successful Response
+          description: this scapes the latest graphics cards from bestbuy website. WARNING do not use this request unless needed. it can take 1-2 min to fulfill. Use the other endpoints for quicker calls to database.
           content:
             application/json:
               schema:
@@ -28,8 +28,8 @@ paths:
                 "$ref": "#/components/schemas/CardList"
   "/cards/{sku_value}":
     get:
-      summary: Read Item
-      operationId: read_item_cards__sku_value__get
+      summary: Get Item By Sku
+      operationId: get_item_by_sku_cards__sku_value__get
       parameters:
       - required: true
         schema:
@@ -51,8 +51,8 @@ paths:
                 "$ref": "#/components/schemas/HTTPValidationError"
   "/cards/{available}":
     get:
-      summary: Read Item
-      operationId: read_item_cards__available__get
+      summary: Get Item By Available
+      operationId: get_item_by_available_cards__available__get
       parameters:
       - required: true
         schema:
