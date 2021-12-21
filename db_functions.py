@@ -6,6 +6,7 @@ import json
 
 DATABASE_EXCEPTION = "DATABASE EXCEPTION"
 
+
 def insert(data):
     """ Connect to the PostgreSQL database server """
     conn = None
@@ -75,8 +76,10 @@ def get_card(sku_value):
     except (Exception, psycopg2.Error) as error :
         print ("Error while fetching data from PostgreSQL", error)
         if len(gpu_records) == 0:
+            print(error)
             raise HTTPException(status_code=409, detail="no sku with that number exists in database")
         else:
+            print(error)
             raise HTTPException(status_code=500, detail=DATABASE_EXCEPTION)
     finally:
         if conn is not None:
@@ -127,5 +130,49 @@ def get_all_cards():
     app_json = json.loads(app_json)
     print(app_json)
     return app_json
+
+#get card by availablity
+def get_card_available(available):
+    """ Connect to the PostgreSQL database server """
+    conn = None
+
+    try:
+        # read connection parameters
+        params = config()
+        temp_dict = {}
+        # connect to the PostgreSQL server
+        print('Connecting to the PostgreSQL database...')
+        conn = psycopg2.connect(**params)
+		
+        # create a cursor
+        cur = conn.cursor()
+        print("reading cards in database...")
+        sql = """SELECT * FROM gpus WHERE available = %s """
+        cur.execute(sql,(available,))
+        gpu_records = cur.fetchall()
+        json_object = []
+        for row in gpu_records:
+            temp_dict = {}
+            temp_dict["sku_value"] = row[0]
+            temp_dict["card_name"] = row[1]
+            temp_dict["available"] = row[2]
+            print("sku_value = ", row[0], )
+            print("card_name = ", row[1])
+            print("available  = ", row[2], "\n")
+            json_object.append(temp_dict)
+    except (Exception, psycopg2.Error) as error :
+        print ("Error while fetching data from PostgreSQL", error)
+        raise HTTPException(status_code=500, detail=DATABASE_EXCEPTION)
+    finally:
+        if conn is not None:
+            conn.close()
+            print('Database connection closed.')
+    return_data = {}
+    return_data["cards"] = json_object
+    app_json = json.dumps(return_data)
+    app_json = json.loads(app_json)
+    print(app_json)
+    return app_json
+
 if __name__ == '__main__':
     connect()

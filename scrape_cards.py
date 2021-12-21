@@ -11,13 +11,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup as soup
+from  utils.enums import Available
 from db_functions import insert
 import time 
 import json
 
 PARSING_EXCEPTION = "a problem happened while scraping data"
-
-CHROME_DRIVER_PATH =r'C:\Users\brahm\Downloads\chromedriver_win32\chromedriver.exe'
+YES = "yes"
+NO = "no"
 
 # get list of graphcis cards
 def getCards():
@@ -29,7 +30,7 @@ def getCards():
     options.add_argument("--disable-extensions")
     #uncomment below when done debugging  
     # options.add_argument("--headless")
-    driver = webdriver.Chrome(chrome_options=options,executable_path=CHROME_DRIVER_PATH)
+    driver = webdriver.Chrome(chrome_options=options,executable_path='./chromedriver')
     driver.get(url)
     driver.implicitly_wait(3)
     
@@ -50,7 +51,7 @@ def getCards():
     error = None
     for x in range(page_count):
         print("page: " + str(x +1))
-        driver = webdriver.Chrome(chrome_options=options,executable_path=CHROME_DRIVER_PATH)
+        driver = webdriver.Chrome(chrome_options=options,executable_path='./chromedriver')
         url = "https://www.bestbuy.com/site/searchpage.jsp?cp="+str(x +1)+"&id=pcat17071&st=graphics+cards"
         driver.get(url)
         driver.implicitly_wait(4)
@@ -66,22 +67,22 @@ def getCards():
                 sku_values = card.findAll("span", {"class": ["sku-value"]})
                 header = card.find("h4", {"class": ["sku-header"]}) 
                 card_dictionary["card_name"] =header.a.text
-                print(str(header.a.text))
+                print("card_name : "+str(header.a.text))
                 sku_index = len(sku_values) -1
                 if sku_values[sku_index] is not None: 
                     card_dictionary["sku_value"] =sku_values[sku_index].text            
                 buy_button = card.find("div", {"class": ["fulfillment-add-to-cart-button"]})
                 button_text = buy_button.div.div.button.text
-                card_dictionary["available"] = "No"
+                card_dictionary["available"] = NO
                 if button_text is not None:
                     #default to some text in case we dont handle some new string bestbuy adds
                     card_dictionary["available"] = button_text
                 if button_text == "Unavailable Nearby":
-                    card_dictionary["available"] = "No"
+                    card_dictionary["available"] =  NO
                 if button_text == "Add to Cart":
-                    card_dictionary["available"] = "Yes"
+                    card_dictionary["available"] = YES
                 if button_text == "Sold Out":
-                    card_dictionary["available"] = "No"
+                    card_dictionary["available"] = NO
 
                 json_object.append(card_dictionary)
                 driver.implicitly_wait(4)
@@ -96,9 +97,11 @@ def getCards():
     app_json = json.dumps(dictReturn)
     app_json = json.loads(app_json)
 
+    # insert data in to table
     insert(app_json)
     print(app_json)
-    print(len(cards))
+
+    print("number of cards scraped: "+ str(len(cards)))
   
     return app_json
 
