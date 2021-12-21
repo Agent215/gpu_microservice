@@ -2,7 +2,7 @@ from typing import Optional
 from pydantic import BaseModel ,json
 from fastapi import FastAPI, HTTPException
 from scrape_cards import getCards
-from db_functionds import get_all_cards, get_card
+from db_functions import get_all_cards, get_card
 from typing import List
 from model import Card,CardList
 import uvicorn

@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup as soup
-from db_functionds import insert
+from db_functions import insert
 import time 
 import json
 
