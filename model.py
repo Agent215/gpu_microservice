@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 
+
 class Card(BaseModel):
     sku_value: str
     card_name: str
@@ -8,6 +9,7 @@ class Card(BaseModel):
 
 
 class CardList(BaseModel):
-    cards :List[Card]
+    cards: List[Card]
+
     class Config:
         orm_mode = True

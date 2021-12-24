@@ -4,8 +4,7 @@ import os
 dirname = os.path.dirname(__file__)
 filename = os.path.abspath('config\database.ini')
 
-# gpu_microservice\config\database.ini
-# /Users/brahm/OneDrive/Documents/GitHub/gpu_service/gpu_microservice/config/database.ini
+
 def config(filename=filename, section='postgresql'):
     # create a parser
     parser = ConfigParser()
