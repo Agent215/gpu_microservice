@@ -1,7 +1,21 @@
 import psycopg2 
-from config import config
+from config.config import config
 from fastapi import FastAPI, HTTPException
 import json
+import logging
+
+# create logger
+logger = logging.getLogger('db_functions.py')
+logger.setLevel(logging.DEBUG)
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+# create formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# add formatter to ch
+ch.setFormatter(formatter)
+# add ch to logger
+logger.addHandler(ch)
 
 
 DATABASE_EXCEPTION = "DATABASE EXCEPTION"
@@ -17,12 +31,12 @@ def insert(data):
         params = config()
 
         # connect to the PostgreSQL server
-        print('Connecting to the PostgreSQL database...')
+        logger.info('Connecting to the PostgreSQL database...')
         conn = psycopg2.connect(**params)
 		
         # create a cursor
         cur = conn.cursor()
-        print("updating cards in database...")
+        logger.info("updating cards in database...")
         for card in cards:
             sku_value = card["sku_value"]
             card_name = card["card_name"]
@@ -30,18 +44,19 @@ def insert(data):
             sql = """INSERT INTO gpus(sku_value,card_name,available)
             VALUES(%s,%s,%s)  ON CONFLICT (sku_value) DO UPDATE SET available = EXCLUDED.available"""
 	        # execute a statement
+            logger.info("inserting card: %s in to database",str(card_name))
             cur.execute(sql, (sku_value,card_name,available))
             conn.commit()
         # close communication with the database
         cur.close()
-        print("cards updated in database")
+        logger.info("cards updated in database")
     except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
+        logger.error(error)
         raise HTTPException(status_code=500, detail=DATABASE_EXCEPTION) 
     finally:
         if conn is not None:
             conn.close()
-            print('Database connection closed.')
+            logger.info('Database connection closed.')
 
 def get_card(sku_value):
     """ Connect to the PostgreSQL database server """
@@ -52,58 +67,51 @@ def get_card(sku_value):
         params = config()
         temp_dict = {}
         # connect to the PostgreSQL server
-        print('Connecting to the PostgreSQL database...')
+        logger.info('Connecting to the PostgreSQL database...')
         conn = psycopg2.connect(**params)
 		
         # create a cursor
         cur = conn.cursor()
-        print("reading cards in database...")
+        logger.info("reading cards in database...")
         sql = """SELECT * FROM gpus WHERE sku_value = %s """
         cur.execute(sql,(sku_value,))
         gpu_records = cur.fetchall()
-        print(len(gpu_records))
         
-        print(gpu_records)
+        logger.info("record found :%s", gpu_records)
         json_object = []
         
         temp_dict["sku_value"] = gpu_records[0][0]
         temp_dict["card_name"] = gpu_records[0][1]
         temp_dict["available"] = gpu_records[0][2]
-        print("sku_value = ", gpu_records[0][0] )
-        print("card_name = ",  gpu_records[0][1])
-        print("available  = ",  gpu_records[0][2], "\n")
         json_object.append(temp_dict)
     except (Exception, psycopg2.Error) as error :
-        print ("Error while fetching data from PostgreSQL", error)
+        logger.error("Error while fetching data from PostgreSQL %s", error)
         if len(gpu_records) == 0:
-            print(error)
+            logger.error(error)
             raise HTTPException(status_code=409, detail="no sku with that number exists in database")
         else:
-            print(error)
+            logger.error(error)
             raise HTTPException(status_code=500, detail=DATABASE_EXCEPTION)
     finally:
         if conn is not None:
             conn.close()
-            print('Database connection closed.')
-    if temp_dict is not None:
-        print(temp_dict)
+            logger.info('Database connection closed.')
     return temp_dict
 
 def get_all_cards():
     """ Connect to the PostgreSQL database server """
     conn = None
-
     try:
         # read connection parameters
         params = config()
 
         # connect to the PostgreSQL server
-        print('Connecting to the PostgreSQL database...')
+        logger.info('Connecting to the PostgreSQL database...')
         conn = psycopg2.connect(**params)
 		
         # create a cursor
         cur = conn.cursor()
-        print("reading cards in database...")
+        logger.info("reading cards in database...")
         sql = """SELECT * FROM gpus"""
         cur.execute(sql)
         gpu_records = cur.fetchall()
@@ -113,22 +121,19 @@ def get_all_cards():
             temp_dict["sku_value"] = row[0]
             temp_dict["card_name"] = row[1]
             temp_dict["available"] = row[2]
-            print("sku_value = ", row[0], )
-            print("card_name = ", row[1])
-            print("available  = ", row[2], "\n")
             json_object.append(temp_dict)
     except (Exception, psycopg2.Error) as error :
-        print ("Error while fetching data from PostgreSQL", error)
+        logger.error ("Error while fetching data from PostgreSQL %s", error)
         raise HTTPException(status_code=500, detail=DATABASE_EXCEPTION)
     finally:
         if conn is not None:
             conn.close()
-            print('Database connection closed.')
+            logger.info('Database connection closed.')
     return_data = {}
     return_data["cards"] = json_object
     app_json = json.dumps(return_data)
     app_json = json.loads(app_json)
-    print(app_json)
+    logger.info("cards in databse : %s",str(app_json))
     return app_json
 
 #get card by availablity
@@ -141,12 +146,12 @@ def get_card_available(available):
         params = config()
         temp_dict = {}
         # connect to the PostgreSQL server
-        print('Connecting to the PostgreSQL database...')
+        logger.info('Connecting to the PostgreSQL database...')
         conn = psycopg2.connect(**params)
 		
         # create a cursor
         cur = conn.cursor()
-        print("reading cards in database...")
+        logger.info("reading cards in database...")
         sql = """SELECT * FROM gpus WHERE available = %s """
         cur.execute(sql,(available,))
         gpu_records = cur.fetchall()
@@ -156,22 +161,19 @@ def get_card_available(available):
             temp_dict["sku_value"] = row[0]
             temp_dict["card_name"] = row[1]
             temp_dict["available"] = row[2]
-            print("sku_value = ", row[0], )
-            print("card_name = ", row[1])
-            print("available  = ", row[2], "\n")
             json_object.append(temp_dict)
     except (Exception, psycopg2.Error) as error :
-        print ("Error while fetching data from PostgreSQL", error)
+        logger.error("Error while fetching data from PostgreSQL %s", error)
         raise HTTPException(status_code=500, detail=DATABASE_EXCEPTION)
     finally:
         if conn is not None:
             conn.close()
-            print('Database connection closed.')
+            logger.info('Database connection closed.')
     return_data = {}
     return_data["cards"] = json_object
     app_json = json.dumps(return_data)
     app_json = json.loads(app_json)
-    print(app_json)
+    logger.info("records found %s",app_json)
     return app_json
 
 if __name__ == '__main__':

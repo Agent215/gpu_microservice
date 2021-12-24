@@ -23,7 +23,7 @@ async def get_all():
 
 @app.get("/cards/sku/{sku_value}", response_model=Card)
 async def get_card_by_sku(sku_value):
-    if len(sku_value) != 6:
+    if len(sku_value) < 1:
         raise  HTTPException(status_code=422, detail="sku is bad length")
     return get_card(sku_value)
 
